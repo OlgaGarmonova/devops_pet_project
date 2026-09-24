@@ -10,29 +10,29 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-central-1"
+  region = var.aws_region
 }
 
 #VPC
 resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
 
   tags = {
     Name        = "pet-project-vpc"
-    Environment = "dev"
+    Environment = var.environment
   }
 }
 
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
+  cidr_block              = var.public_subnet_cidr
   map_public_ip_on_launch = true
 
   tags = {
     Name        = "pet-project-public-subnet"
-    Environment = "dev"
+    Environment = var.environment
   }
 }
 
@@ -71,7 +71,7 @@ resource "aws_key_pair" "deployer" {
 
   tags = {
     Name        = "pet-project-ssh-key"
-    Environment = "dev"
+    Environment = var.environment
   }
 }
 
@@ -103,7 +103,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [aws_vpc.main.cidr_block]
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
 
   egress {
@@ -117,6 +117,48 @@ resource "aws_security_group" "web_sg" {
 
   tags = {
     Name        = "pet-project-web-sg"
+    Environment = var.environment
+  }
+}
+
+#Instance EC2
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]
+
+  filter {
+
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+resource "aws_instance" "k3s_server" {
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
+  key_name                    = aws_key_pair.deployer.key_name
+  associate_public_ip_address = true
+
+  root_block_device {
+    volume_size           = 20
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
+  tags = {
+    Name        = "k3s-dev-server"
     Environment = "dev"
   }
+}
+
+output "ec2_public_ip" {
+  description = "Public IP of the EC2 instance"
+  value       = aws_instance.k3s_server.public_ip
 }
