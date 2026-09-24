@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region for infrastructure placement"
   type        = string
-  default     = "eu-central-1" # Можно изменить на ваш рабочий регион (например, us-east-1)
+  default     = "eu-central-1"
 }
 
 variable "vpc_cidr" {
@@ -19,7 +19,7 @@ variable "public_subnet_cidr" {
 variable "instance_type" {
   description = "EC2 instance type (Free Tier eligible)"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
 }
 
 variable "environment" {
