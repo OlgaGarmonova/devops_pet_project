@@ -6,15 +6,16 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: olgagarmonova/my-app
+  IMAGE_NAME: {{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write    
 
 jobs:
   # ================= CI: BUILD & PUSH =================
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout code
@@ -58,5 +59,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
            kubectl rollout restart deployment/my-app-deployment -n devops-app
-            
-            kubectl rollout status deployment/my-app-deployment -n devops-app
+           kubectl rollout status deployment/my-app-deployment -n devops-app
