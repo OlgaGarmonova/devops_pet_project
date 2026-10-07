@@ -1,14 +1,14 @@
-# Архитектура проекта (Architecture Overview)
+# Architecture Overview
 
-В данном документе описана инфраструктура и CI/CD пайплайн пет-проекта для автоматизации развертывания приложения в Kubernetes с использованием легковесного дистрибутива `k3s` на базе облака AWS.
+This document describes the infrastructure and CI/CD pipeline for the pet project, designed to automate application deployment to Kubernetes using the lightweight `k3s` distribution hosted on AWS.
 
 ---
 
-## 1. Инфраструктура (Infrastructure)
+## 1. Infrastructure
 
-Инфраструктура описана с помощью **Terraform** и разворачивается в облаке **Amazon Web Services (AWS)**. В качестве целевого хоста используется виртуальная машина `EC2 t3.micro`.
+The infrastructure is entirely defined as code using **Terraform** and provisioned in **Amazon Web Services (AWS)**. The Kubernetes cluster runs on an `EC2 t3.micro` instance.
 
-**Схема инфраструктуры:**
+**Infrastructure Diagram:**
 
 +-----------------------------------------------------------------------+
 | AWS Cloud (Region: eu-central-1)                                      |
@@ -38,40 +38,40 @@
 |  +-----------------------------------------------------------------+  |
 +-----------------------------------------------------------------------+
 
-### Компоненты инфраструктуры:
-* **Terraform**: Автоматизирует создание VPC, подсетей (Subnets), настроек безопасности (Security Groups) и EC2 инстанса.
-* **AWS EC2 (`t3.micro`)**: Виртуальная машина, выступающая в роли хоста для кластера.
-* **k3s**: Сертифицированный дистрибутив Kubernetes от Rancher, оптимизированный для работы в условиях ограниченных ресурсов.
-* **Traefik (Ingress)**: Встроенный по умолчанию в k3s контроллер маршрутизации, принимающий внешний HTTP/HTTPS-трафик и распределяющий его по внутренним сервисам.
+### Infrastructure Components:
+* **Terraform**: Automates the provisioning of VPC, Subnets, Security Groups, and EC2 instances.
+* **AWS EC2 (`t3.micro`)**: Virtual machine serving as the host node for the cluster.
+* **k3s**: A certified Kubernetes distribution by Rancher, optimized for resource-constrained environments.
+* **Traefik (Ingress)**: The default ingress controller built into k3s, routing external HTTP/HTTPS traffic to internal services.
 
 ---
 
-## 2. CI/CD Пайплайн (Continuous Integration & Delivery)
+## 2. CI/CD Pipeline
 
-Процесс доставки кода от разработчика до работающего кластера автоматизирован с помощью **GitHub Actions**.
+The application build and delivery pipeline is fully automated using **GitHub Actions**.
 
-**Схема пайплайна:**
+**Pipeline Diagram:**
 
 Developer (Push) ➔ GitHub Repository ➔ GitHub Actions (Build & Test) ➔ GHCR (Docker Images) ➔ Kubernetes k3s (Pull & Deploy) ➔ Application (Running Pods)
 
-### Этапы пайплайна:
-1. **Commit & Push**: Разработчик отправляет изменения кода в репозиторий на GitHub.
-2. **GitHub Actions Workflow**: Триггерит сборку проекта при каждом пуше в основную ветку.
-3. **Docker Build**: Собирает оптимизированный Docker-образ приложения.
-4. **GHCR (GitHub Container Registry)**: Реестр, куда автоматически сохраняется готовый тегированный артефакт (образ).
-5. **Deployment to k3s**: Кластер подтягивает свежий образ из GHCR и производит обновление подов (Rolling Update).
+### Pipeline Stages:
+1. **Commit & Push**: Developer pushes code changes to the GitHub repository.
+2. **GitHub Actions Workflow**: Triggers the automated build process upon every push to the `main` branch.
+3. **Docker Build**: Builds an optimized Docker image of the application.
+4. **GHCR (GitHub Container Registry)**: Registry storing the tagged container images.
+5. **Deployment to k3s**: The cluster pulls the latest image from GHCR and performs a Rolling Update on the application pods.
 
 ---
 
-## 3. Сетевая модель и маршрутизация (Networking)
+## 3. Networking & Traffic Flow
 
-Взаимодействие запросов внутри кластера выстроено по стандартной иерархической схеме Kubernetes:
+Traffic routing inside the cluster follows standard Kubernetes architectural principles:
 
-**Схема движения трафика:**
+**Traffic Flow Diagram:**
 
 Internet ➔ AWS Security Group (Ports 80/443) ➔ k3s Ingress Controller ➔ Kubernetes Service (ClusterIP) ➔ Application Pods
 
-### Компоненты сети:
-* **Ingress**: Слушает веб-порты на ноде и сопоставляет входящие URL-пути с нужными внутренними сервисами.
-* **Service**: Обеспечивает стабильную внутреннюю точку доступа (балансировку нагрузки) к группе подов.
-* **Pods**: Изолированные контейнеры с запущенным приложением.
+### Network Components:
+* **Ingress**: Listens on public node ports and routes incoming requests to internal services based on host/path rules.
+* **Service**: Provides a stable internal IP and load balancing across application pods.
+* **Pods**: Isolated containers running the application workloads.
