@@ -21,24 +21,25 @@ A pet project demonstrating an end-to-end DevOps pipeline for provisioning cloud
 | **Documentation** | **Markdown** | Comprehensive guides for setup, troubleshooting, and architectural decisions. |
 
 ---
-
-## Deployment & Delivery Pipeline
+```text
 [ Local Code Change ]
-│
-▼
+        │
+        ▼
 [ Git Push to Main Branch ]
-│
-▼
+        │
+        ▼
 [ GitHub Actions CI/CD Pipeline ]
-├── 1. Build & Tag Docker Image
-├── 2. Push Image to Docker Hub Registry
-├── 3. SSH into AWS EC2 Instance
-└── 4. Apply Kubernetes Manifests (kubectl apply)
-│
-▼
+   ├── 1. Build & Tag Docker Image
+   ├── 2. Push Image to GHCR (GitHub Container Registry)
+   ├── 3. SSH / OIDC Deployment to AWS EC2 Instance
+   └── 4. Apply Kubernetes Manifests (kubectl apply / Rolling Update)
+        │
+        ▼
 [ AWS EC2 Instance (k3s Cluster) ]
-├── Ingress Controller / Service (NodePort)
-└── Application Pods & Monitoring Workloads
+   ├── Ingress Controller (Traefik) / ClusterIP Service
+   └── Application Pods & Monitoring Workloads
+```
+
 ---
 
 ## Key Highlights & Capacity Planning (Troubleshooting)
